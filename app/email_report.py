@@ -16,7 +16,7 @@ SMTP_HOST = "smtp.gmail.com"
 SMTP_PORT = 587
 SMTP_USER = "jeffcarbary@gmail.com"
 SMTP_PASS = "hnac txms uhmk wiss"  # use app password or env var
-TO_EMAIL = "jeffcarbary@gmail.com"
+TO_EMAIL = ["jeffcarbary@gmail.com", "raquelcarbary@gmail.com"] 
 
 API_BASE = "http://localhost:5000/reports"  # change if remote
 
@@ -100,7 +100,7 @@ def plot_weekly_chart(daily_totals, week_start, today, weekly_budget):
     ax.plot(labels, projected, label="Projected", color="orange", linestyle="--")
     ax.plot(labels, budget_line, label="Budget", color="red", linestyle=":")
     ax.set_ylabel("Cumulative Spend ($)")
-    ax.set_title("Weekly Report")
+    ax.set_title("Week Report")
     ax.legend()
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
@@ -146,16 +146,16 @@ html_template = """
   <title>📊 Budget Reports</title>
 </head>
 <body>
-  <h2>📅 Weekly & Monthly Reports</h2>
+  <h2>📅 Week & Monthly Reports</h2>
 
-  <h3>Weekly Report</h3>
+  <h3>Week Report</h3>
   <p><strong>Total:</strong> ${{ weekly_total }}</p>
   <p><strong>Pace:</strong> {{ weekly_pct }}% of ${{ weekly_budget }} — on pace for ${{ weekly_projected|round(0) }} ({{ '❌ $' ~ weekly_diff|round(0) ~ ' over' if weekly_diff>0 else '✅ $' ~ (-weekly_diff)|round(0) ~ ' under' }})</p>
   <img src="data:image/png;base64,{{ weekly_chart }}" width="600"/>
 
   <h3>Monthly Report</h3>
   <p><strong>Total:</strong> ${{ monthly_total }}</p>
-  <p><strong>Weekly Avg:</strong> ${{ weekly_avg|round(2) }}</p>
+  <p><strong>Week Avg:</strong> ${{ weekly_avg|round(2) }}</p>
   <p><strong>Pace:</strong> {{ monthly_pct }}% of ${{ monthly_budget }} — on pace for ${{ monthly_projected|round(0) }} ({{ '❌ $' ~ monthly_diff|round(0) ~ ' over' if monthly_diff>0 else '✅ $' ~ (-monthly_diff)|round(0) ~ ' under' }})</p>
   <img src="data:image/png;base64,{{ monthly_chart }}" width="600"/>
 </body>
@@ -182,7 +182,7 @@ html_content = Template(html_template).render(
 msg = MIMEMultipart('related')
 msg['Subject'] = "📊 Budget Report"
 msg['From'] = SMTP_USER
-msg['To'] = TO_EMAIL
+msg['To'] = ", ".join(TO_EMAIL) 
 
 # Create alternative MIME part (for HTML)
 msg_alt = MIMEMultipart('alternative')
@@ -224,7 +224,8 @@ msg.attach(img_monthly)
 with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
     server.starttls()
     server.login(SMTP_USER, SMTP_PASS)
-    server.send_message(msg)
+#    server.send_message(msg)
+    server.sendmail(SMTP_USER, TO_EMAIL, msg.as_string()) #for list of emails
 
 print("✅ Email sent with inline charts successfully!")
 
